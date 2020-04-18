@@ -3,7 +3,7 @@
     "splitter": "/",
     "config": {
         "tab": 2,
-        "file": "results.gql",
+        "file": "result.gql",
         "strict": true
     },
     "get": [
