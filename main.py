@@ -276,7 +276,7 @@ class AnalyseGet(Tools):
                 pendingNestObj["data"], name=f"{pendingNestObj['name']}",
             )
 
-        print(f"[MAIN]: \n{'='*40}\n{self.inputs}\n{'='*40}")
+        print(f"[MAIN]: \n{'='*40}\n{self.types}\n{'='*40}")
 
 
 # Load the API configuration file

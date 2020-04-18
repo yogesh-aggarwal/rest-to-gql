@@ -1,0 +1,18 @@
+# Generated with <3
+
+
+type Todos {
+  userId: Number!
+  id: Number!
+  title: String!
+  completed: Boolean!
+}
+
+type QueryResolver {
+  getTodos: Todos!
+}
+
+schema {
+  query: QueryResolver
+  mutation: MutationResolver
+}
