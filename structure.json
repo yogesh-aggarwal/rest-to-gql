@@ -1,0 +1,17 @@
+{
+    "base": "https://jsonplaceholder.typicode.com",
+    "splitter": "/",
+    "config": {
+        "tab": 2,
+        "file": "results.gql",
+        "strict": true
+    },
+    "get": [
+        {
+            "url": "todos/",
+            "params": [
+                1
+            ]
+        }
+    ]
+}
