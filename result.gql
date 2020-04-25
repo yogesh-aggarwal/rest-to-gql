@@ -1,5 +1,9 @@
 # Generated with <3
 
+input TodosInp {
+  id: String!
+}
+
 
 type Todos {
   userId: Number!
@@ -8,8 +12,8 @@ type Todos {
   completed: Boolean!
 }
 
-type QueryResolver {
-  getTodos: Todos!
+type MutationResolver {
+  mutateTodos(args: TodosInp): Todos!
 }
 
 schema {

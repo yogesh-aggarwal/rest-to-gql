@@ -8,9 +8,17 @@
     },
     "get": [
         {
-            "url": "todos/",
+            "url": "todos/:id[str]",
             "params": [
                 1
+            ]
+        }
+    ],
+    "post": [
+        {
+            "url": "todos/:id[str]",
+            "params": [
+                2
             ]
         }
     ]
