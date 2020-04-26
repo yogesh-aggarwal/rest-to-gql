@@ -6,6 +6,7 @@ class Mutation:
         self.tools = tools
         self.endPoints = []
         self.combineMethods()
+        self.init()
 
     def combineMethods(self):
         """

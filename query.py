@@ -6,6 +6,7 @@ class Query:
         self.endPoints = config.structure["get"]
         self.tools = tools
         super().__init__()
+        self.init()
 
     def init(self):
         """

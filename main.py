@@ -7,32 +7,23 @@ def loadStructure(name="./structure.json"):
     with open(name) as f:
         config.structure = json.loads(f.read())
 
-
-
-# ? Load the API configuration file
+# & Environment setup: Load the API configuration from config file
 loadStructure()
 config.tab = " " * config.structure["config"]["tab"]
 config.queryFile = config.structure["config"]["file"]
 config.strict = config.structure["config"]["strict"]
 config.splitter = config.structure["splitter"]
 config.apiBase = config.structure["base"]
-# ? Starting the process
-# get = query.Query()
-# get.init()
 
-# # ? Till now everything prepared & now to be written in file
 
+# / Base class
 tools = tools.Tools()
 
-get = query.Query(tools)
-mut = mutation.Mutation(tools)
+# / Inherit tools in query handlers
+query.Query(tools)
+mutation.Mutation(tools)
 
-# get.init()
-mut.init()
-
+# & All the `types` & `inputs` are prepared
 tools.parseSchema()
-print()
-print()
-print()
-print(tools.schema)
+# & Till now everything prepared & now to be written in file
 tools.writeQueryToFile()

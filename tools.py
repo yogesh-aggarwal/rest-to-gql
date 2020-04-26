@@ -30,7 +30,16 @@ class BaseTools:
         """
         # ? Saving the resultant query to the file
         with open(config.queryFile, "w+") as f:
-            f.write(f"#? Generated with <3\n{self.inputs}\n{self.types}\n{self.schema}")
+            lines = (
+                "# Generated with <3\n\n",
+                f"\n# {'='*30}| Inputs |{'='*30} #\n",
+                self.inputs,
+                f"\n# {'='*30}| Types |{'='*30} #\n",
+                self.types,
+                f"\n# {'='*30}| Schema |{'='*30} #\n",
+                self.schema,
+            )
+            f.writelines(lines)
 
     def getStrict(self):
         """
@@ -154,7 +163,7 @@ class ParseTools(BaseTools):
         for parentAttrib in res:
             # ? Creating a new type if not created yet
             if not self.interfaceExists:
-                self.types += f"\ntype {name} " + "{\n"
+                self.types += f"type {name} " + "{\n"
                 # ? Setting to `True` so that in the next round no new types get created for the same interface
                 self.interfaceExists = True
 
@@ -186,7 +195,7 @@ class ParseTools(BaseTools):
                 )
         # ? If there's no error & query created successfully then closing it.
         if self.types:
-            self.types += "}\n"
+            self.types += "}\n\n"
 
     def parseResponseForInputs(self, args, name="Main"):
         """
@@ -194,13 +203,14 @@ class ParseTools(BaseTools):
         """
         # # ? Check whether to create a new input interface or not
         # if not self.interfaceExists:
-        self.inputs += f"\ninput {name}Inp " + "{\n"
+        self.inputs += f"input {name}Inp " + "{\n"
 
         # ? Loop through dict like {name: "id", type: "String"}
         for arg in args:
             self.inputs += (
                 f"{config.tab}{arg['name']}: {arg['type']}{self.getStrict()}\n"
             )
+        self.inputs += "}\n\n"
 
     def parseSchema(self, prefix="get"):
         """
@@ -225,7 +235,7 @@ class ParseTools(BaseTools):
         # & Mutations
         # ? Initiating new resolver
         self.schema += (
-            "type MutationResolver {" if self.schemaMutationInputNames else ""
+            "\ntype MutationResolver {" if self.schemaMutationInputNames else ""
         )
         # ? Loop through dict like {User: UserInp} (name: input_name)
         for typ in self.schemaMutationInputNames:
@@ -253,7 +263,7 @@ class ParseTools(BaseTools):
                 if self.schemaMutationInputNames
                 else ""
             )
-            + "}\n"
+            + "}\n\n"
         )
 
 
@@ -303,7 +313,6 @@ class Analyse(ParseTools):
                     self.schemaMutationInputNames.append(name)
 
             self.parseResponseForInputs(args, name=name)
-            self.inputs += "}\n"
 
         # & Fetching API
         if sameResponse:
@@ -313,6 +322,7 @@ class Analyse(ParseTools):
 
         # & Parsing the response so as to start the generation process
         self.parseResponseForType(res, name=f"{name}")
+        self.interfaceExists = False
         # & Completing the types for the pending nested type interfaces that are left during generation of parent types
         for pendingNestObj in self.nestedTypes:
             self.interfaceExists = False

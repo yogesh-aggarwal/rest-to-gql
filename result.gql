@@ -1,12 +1,32 @@
-#? Generated with <3
+# Generated with <3
+
+
+# ==============================| Inputs |============================== #
+input TodosInp {
+  id: String!
+}
 
 input updateTodosInp {
   id: Number!
 }
 
 
+# ==============================| Types |============================== #
+type Todos {
+  userId: Number!
+  id: Number!
+  title: String!
+  completed: Boolean!
+}
+
 type updateTodos {
   id: Number!
+}
+
+
+# ==============================| Schema |============================== #
+type QueryResolver {
+  getTodos(args: TodosInp): Todos!
 }
 
 type MutationResolver {
@@ -14,5 +34,7 @@ type MutationResolver {
 }
 
 schema {
+  query: QueryResolver
   mutation: MutationResolver
 }
+
