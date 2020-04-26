@@ -9,6 +9,7 @@
     "get": [
         {
             "url": "todos/:id[str]",
+            "name": "MyTodos",
             "params": [
                 1,""
             ]

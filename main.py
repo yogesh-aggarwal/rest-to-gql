@@ -1,11 +1,12 @@
 import json
-import config, mutation, query, tools
+import config, mutation, query, tools, generateModel
 
 
 # & Loading the REST API configurations
 def loadStructure(name="./structure.json"):
     with open(name) as f:
         config.structure = json.loads(f.read())
+
 
 # & Environment setup: Load the API configuration from config file
 loadStructure()
@@ -27,3 +28,5 @@ mutation.Mutation(tools)
 tools.parseSchema()
 # & Till now everything prepared & now to be written in file
 tools.writeQueryToFile()
+
+generateModel.GenerateModelJS(tools)

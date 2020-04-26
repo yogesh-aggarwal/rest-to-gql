@@ -14,7 +14,27 @@ class Query:
         """
         for endPoint in self.endPoints:
             self.interfaceExists = False
-            params = tuple(
+            urlWords = tuple(
                 filter(lambda x: x != "", endPoint["url"].split(config.splitter))
             )
-            self.tools.analyseEndPoint(params, endPoint["params"])
+            try:
+                endPointNameByUser = endPoint["name"]
+            except:
+                endPointNameByUser = ""
+            try:
+                sameResponse = endPoint["sameResponse"]
+            except:
+                sameResponse = ""
+            try:
+                exampleData = endPoint["exampleData"]
+            except:
+                exampleData = {}
+
+            self.tools.analyseEndPoint(
+                urlWords,
+                endPoint["params"],
+                name=endPointNameByUser,
+                sameResponse=sameResponse,
+                resData=exampleData,
+                reqType="get",
+            )

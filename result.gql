@@ -2,7 +2,7 @@
 
 
 # ==============================| Inputs |============================== #
-input TodosInp {
+input MyTodosInp {
   id: String!
 }
 
@@ -12,7 +12,7 @@ input updateTodosInp {
 
 
 # ==============================| Types |============================== #
-type Todos {
+type MyTodos {
   userId: Number!
   id: Number!
   title: String!
@@ -25,16 +25,12 @@ type updateTodos {
 
 
 # ==============================| Schema |============================== #
-type QueryResolver {
-  getTodos(args: TodosInp): Todos!
-}
 
 type MutationResolver {
   updateTodos(args: updateTodosInp): updateTodos!
 }
 
 schema {
-  query: QueryResolver
   mutation: MutationResolver
 }
 

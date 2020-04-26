@@ -4,9 +4,6 @@ import json
 
 
 class BaseTools:
-    # ? Decides whether to create a new interface or not for nested types
-    interfaceExists = False
-
     def __init__(self):
         # ? Type interfaces are appended to it
         self.types = config.types
@@ -14,6 +11,8 @@ class BaseTools:
         self.inputs = config.inputs
         # ? Schema interfaces are appended to it
         self.schema = config.schema
+        # ? Decides whether to create a new interface or not for nested types
+        self.interfaceExists = False
         # ? Stores the nested types that are object based
         self.nestedTypes = []
         # ? Stores the {getName: Name} type objects for `query` inputs resolving
@@ -21,8 +20,13 @@ class BaseTools:
         # ? Stores the {(create, update, delete)Name(args: {}): Name} type objects for `mutation` inputs resolving
         self.schemaMutationInputNames = []
 
-        self.types = config.types
-        self.inputs = config.inputs
+        self.models = []
+
+    def checkTypeIsNewModel(self, name, custom=False):
+        if not ("update" in name or "create" in name or "delete" in name) or custom:
+            return True
+        else:
+            return False
 
     def writeQueryToFile(self):
         """
@@ -148,7 +152,7 @@ class ParseTools(BaseTools):
                 raise ValueError(f'Unknown data type: "{x}"')
             return False
 
-    def parseResponseForType(self, res, name="Main"):
+    def parseResponseForType(self, res, name="Main", customName=False):
         """
         Generates the type for `gql` query based on 
         the variables. It creates the root type & all
@@ -159,6 +163,9 @@ class ParseTools(BaseTools):
         # ? Check for dict because on arrays it gives error during slicing for the value
         res = res if isinstance(res, dict) else res[0]
 
+        if self.checkTypeIsNewModel(name, custom=customName):
+            model = {"name": name, "values": []}
+
         # ? Looping through the dict variables
         for parentAttrib in res:
             # ? Creating a new type if not created yet
@@ -166,7 +173,6 @@ class ParseTools(BaseTools):
                 self.types += f"type {name} " + "{\n"
                 # ? Setting to `True` so that in the next round no new types get created for the same interface
                 self.interfaceExists = True
-
             # ? Identifying the `gql` type
             typ = self.parseTypeByObj(res[parentAttrib])
             isArray = (
@@ -179,10 +185,18 @@ class ParseTools(BaseTools):
                 # ? Appending the entry to the type interface. Eg: `_id: String!`
                 if isArray:  # ? For arrays appending like `[String]`
                     self.types += f"{config.tab}{parentAttrib}: [{typ}{self.getStrict()}]{self.getStrict()}\n"
+                    if self.checkTypeIsNewModel(name, custom=customName):
+                        model["values"].append(
+                            {"name": parentAttrib, "type": [typ],}
+                        )
                 else:  # ? For normal values like `String`
                     self.types += (
                         f"{config.tab}{parentAttrib}: {typ}{self.getStrict()}\n"
                     )
+                    if self.checkTypeIsNewModel(name, custom=customName):
+                        model["values"].append(
+                            {"name": parentAttrib, "type": typ,}
+                        )
             else:  # ? Type may be a nested object or an array
                 if isArray:  # ? For arrays appending like `[String]`
                     self.types += f"{config.tab}{parentAttrib}: [{name}{parentAttrib.title()}{self.getStrict()}]{self.getStrict()}\n"
@@ -196,6 +210,8 @@ class ParseTools(BaseTools):
         # ? If there's no error & query created successfully then closing it.
         if self.types:
             self.types += "}\n\n"
+        if self.checkTypeIsNewModel(name, custom=customName):
+            self.models.append(model)
 
     def parseResponseForInputs(self, args, name="Main"):
         """
@@ -277,6 +293,7 @@ class Analyse(ParseTools):
         """
         Getting details about the end point from the config file
         """
+        customName = False
         # ? Contains args in form of `{ argName: argTypeAsOfGraphQL }`
         args = []
         # ? Contains all the words other than arguments that are present in URL
@@ -311,7 +328,8 @@ class Analyse(ParseTools):
                     name = f"{self.getPrefixByRequestName(reqType)}{keywords[0]}"
                     # ? Creating input for the parent route
                     self.schemaMutationInputNames.append(name)
-
+            else:
+                customName = True
             self.parseResponseForInputs(args, name=name)
 
         # & Fetching API
@@ -321,7 +339,7 @@ class Analyse(ParseTools):
             res = self.getResponse(prepare=(urlWords, params), reqType=reqType)
 
         # & Parsing the response so as to start the generation process
-        self.parseResponseForType(res, name=f"{name}")
+        self.parseResponseForType(res, name=f"{name}", customName=customName)
         self.interfaceExists = False
         # & Completing the types for the pending nested type interfaces that are left during generation of parent types
         for pendingNestObj in self.nestedTypes:

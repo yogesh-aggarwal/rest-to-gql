@@ -33,12 +33,20 @@ class Mutation:
                 endPointNameByUser = endPoint["name"]
             except:
                 endPointNameByUser = ""
+            try:
+                sameResponse = endPoint["sameResponse"]
+            except:
+                sameResponse = ""
+            try:
+                exampleData = endPoint["exampleData"]
+            except:
+                exampleData = {}
 
             self.tools.analyseEndPoint(
                 urlWords,
                 endPoint["params"],
                 name=endPointNameByUser,
-                sameResponse=endPoint["sameResponse"],
-                resData=endPoint["exampleData"],
+                sameResponse=sameResponse,
+                resData=exampleData,
                 reqType="put",
             )
