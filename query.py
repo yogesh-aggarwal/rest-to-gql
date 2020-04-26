@@ -1,16 +1,10 @@
-from . import config, tools
+import config
 
 
-class Query(tools.Tools):
-    def __init__(self):
-        self.types = config.types
-        self.inputs = config.inputs
+class Query:
+    def __init__(self, tools):
         self.endPoints = config.structure["get"]
-        config.tab = " " * config.structure["config"]["tab"]
-        config.queryFile = config.structure["config"]["file"]
-        config.strict = config.structure["config"]["strict"]
-        config.splitter = config.structure["splitter"]
-        config.apiBase = config.structure["base"]
+        self.tools = tools
         super().__init__()
 
     def init(self):
@@ -22,9 +16,4 @@ class Query(tools.Tools):
             params = tuple(
                 filter(lambda x: x != "", endPoint["url"].split(config.splitter))
             )
-            print(params)
-            self.analyseEndPoint(params, endPoint["params"])
-
-        self.parseSchema()
-
-        self.writeQueryToFile()
+            self.tools.analyseEndPoint(params, endPoint["params"])

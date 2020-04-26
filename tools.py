@@ -1,4 +1,4 @@
-from . import config
+import config
 import requests
 import json
 
@@ -16,10 +16,13 @@ class BaseTools:
         self.schema = config.schema
         # ? Stores the nested types that are object based
         self.nestedTypes = []
-        # ? Stores the {getName: Name} type objects for `query` resolving
-        self.schemaQueryData = {}
-        # ? Stores the {(create, update, delete)Name(args: {}): Name} type objects for `mutation` resolving
-        self.schemaMutationData = {}
+        # ? Stores the {getName: Name} type objects for `query` inputs resolving
+        self.schemaQueryInputNames = []
+        # ? Stores the {(create, update, delete)Name(args: {}): Name} type objects for `mutation` inputs resolving
+        self.schemaMutationInputNames = []
+
+        self.types = config.types
+        self.inputs = config.inputs
 
     def writeQueryToFile(self):
         """
@@ -42,14 +45,27 @@ class BaseTools:
         """
         return "{" + x + "}"
 
+    def getPrefixByRequestName(self, req):
+        if req == "get":
+            return "get"
+        elif req == "delete":
+            return "delete"
+        elif req in ["put", "post"]:
+            return "update"
+        else:
+            return req
+
     @staticmethod
-    def getResponse(url="", toJson=True, base=True, prepare=False):
+    def getResponse(
+        url="", toJson=True, base=True, prepare=False, reqType="get", data={}
+    ):
         """
         Helps in fetching the API
         `base`: Whether to attach the API root URL or not
         `toJson`: Whether to convert the fetch results to JSON object or not
-        `prepare`: Opp. to `url`. List of (url, params)
+        `prepare`: Opp. to `url`. List of (urlWords, params)
         """
+        # ? Prepare the URL from the config file
         if prepare:
             url = ""
             paramIndex = 0
@@ -64,8 +80,26 @@ class BaseTools:
             if not url:
                 raise ValueError("No URL Provided.")
 
+        url = f"{config.apiBase if base else ''}/{url}"
+        # ? "//" sometimes occurs when len(arguments) != len(param values)
+        url = url.replace("//", "/")
+        # ? Fix: Due to above step "https://" or "http://" get changed to "https:/" or "http:/"
+        url = url.replace(":/", "://")
+
         # ? Fetching the result
-        result = requests.get(f"{config.apiBase if base else ''}/{url}").text
+        if reqType == "get":
+            result = requests.get(url).text
+        elif reqType == "put":
+            result = requests.put(url).text
+        elif reqType == "post":
+            result = requests.post(url).text
+        elif reqType == "patch":
+            result = requests.patch(url).text
+        elif reqType == "post":
+            result = requests.delete(url).text
+        else:
+            raise ValueError(f"Invalid request type: {reqType}")
+
         return json.loads(result) if toJson else result
 
 
@@ -105,9 +139,9 @@ class ParseTools(BaseTools):
                 raise ValueError(f'Unknown data type: "{x}"')
             return False
 
-    def parseResponseForTypes(self, res, name="Main"):
+    def parseResponseForType(self, res, name="Main"):
         """
-        Generates the types for `gql` query based on 
+        Generates the type for `gql` query based on 
         the variables. It creates the root type & all
         the nested types are appended to `nestedTypes`
         object. Then they are fetched in the next step
@@ -158,9 +192,9 @@ class ParseTools(BaseTools):
         """
         Generates the inputs fpr `gql` query based on the variables.
         """
-        # ? Check whether to create a new input interface or not
-        if not self.interfaceExists:
-            self.inputs += f"\ninput {name}Inp " + "{\n"
+        # # ? Check whether to create a new input interface or not
+        # if not self.interfaceExists:
+        self.inputs += f"\ninput {name}Inp " + "{\n"
 
         # ? Loop through dict like {name: "id", type: "String"}
         for arg in args:
@@ -172,28 +206,53 @@ class ParseTools(BaseTools):
         """
         Parses all the `type` & `input` interfaces into a unified schema
         """
-        # ? Queries
-        self.schema += (
-            f"type {'QueryResolver' if prefix=='get' else 'MutationResolver'} " "{"
-        )  # ? Initiating new resolver
+        # & Queries
+        # ? Initiating new resolver
+        self.schema += "type QueryResolver {" if self.schemaQueryInputNames else ""
         # ? Loop through dict like {User: UserInp} (name: input_name)
-        for typ in self.schemaQueryData:
+        for typ in self.schemaQueryInputNames:
             args = (
-                f"(args: {self.schemaQueryData[typ]})"
-                if self.schemaQueryData[typ]  # ? If the `type` defination has inputs
+                f"(args: {typ}Inp)"
+                if typ  # ? If the `type` defination has inputs
                 else ""
             )
             # ? Concat the `QueryResolver` entry
-            self.schema += (
-                f"\n{config.tab}{prefix}{typ}{args}: {typ}{self.getStrict()}\n"
-            )
+            self.schema += f"\n{config.tab}get{typ}{args}: {typ}{self.getStrict()}\n"
 
-        self.schema += "}\n"  # ? Complete the `QueryResolver` `type` defination
+        # ? Complete the `QueryResolver` `type` defination
+        self.schema += "}\n" if self.schemaQueryInputNames else ""
+
+        # & Mutations
+        # ? Initiating new resolver
+        self.schema += (
+            "type MutationResolver {" if self.schemaMutationInputNames else ""
+        )
+        # ? Loop through dict like {User: UserInp} (name: input_name)
+        for typ in self.schemaMutationInputNames:
+            args = (
+                f"(args: {typ}Inp)"
+                if typ  # ? If the `type` defination has inputs
+                else ""
+            )
+            # ? Concat the `QueryResolver` entry
+            self.schema += f"\n{config.tab}{typ}{args}: {typ}{self.getStrict()}\n"
+
+        # ? Complete the `QueryResolver` `type` defination
+        self.schema += "}\n" if self.schemaMutationInputNames else ""
 
         # ? Finalizing the schema
         self.schema += (
             "\nschema {\n"
-            + f"{config.tab}query: QueryResolver\n{config.tab}mutation: MutationResolver\n"
+            + (
+                f"{config.tab}query: QueryResolver\n"
+                if self.schemaQueryInputNames
+                else ""
+            )
+            + (
+                f"{config.tab}mutation: MutationResolver\n"
+                if self.schemaMutationInputNames
+                else ""
+            )
             + "}\n"
         )
 
@@ -202,14 +261,19 @@ class Analyse(ParseTools):
     def __init__(self):
         super().__init__()
 
-    def analyseEndPoint(self, url, params):
+    def analyseEndPoint(
+        self, urlWords, params, name="", reqType="get", sameResponse=False, resData={}
+    ):
         """
         Getting details about the end point from the config file
         """
+        # ? Contains args in form of `{ argName: argTypeAsOfGraphQL }`
         args = []
+        # ? Contains all the words other than arguments that are present in URL
         keywords = []
         # ? Seperating out the parameters & keywords
-        for param in url:
+        for param in urlWords:
+            # ? This means it's not a parameter
             if ":" not in param:
                 keywords.append(param)
             else:
@@ -226,29 +290,40 @@ class Analyse(ParseTools):
             map(lambda x: x.title(), keywords)
         )  # ? Filtering out the blank strings
 
-        # ? If there're arguments required by `type` interface then passing data to schemaData as {name: nameInp}
-        self.schemaQueryData[keywords[0]] = f"{keywords[0]}Inp" if args else False
-
-        # ? Creating input for the parent route
+        # & If arguments are present that means URL need an `input` interface, prepare that.
         if args:
-            self.parseResponseForInputs(args, name=keywords[0])
+            if not name:
+                if reqType == "get":
+                    name = keywords[0]
+                    # ? Creating input for the parent route
+                    self.schemaQueryInputNames.append(name)
+                else:
+                    name = f"{self.getPrefixByRequestName(reqType)}{keywords[0]}"
+                    # ? Creating input for the parent route
+                    self.schemaMutationInputNames.append(name)
+
+            self.parseResponseForInputs(args, name=name)
             self.inputs += "}\n"
 
-        # ? & Main
-        # ? Fetching API
-        res = self.getResponse(prepare=(url, params))
-        # ? Parsing the response so as to start the generation process
-        self.parseResponseForTypes(res, name=keywords[0])
-        # ? Completing the types for the pending nested type interfaces that are left during generation of parent types
+        # & Fetching API
+        if sameResponse:
+            res = resData
+        else:
+            res = self.getResponse(prepare=(urlWords, params), reqType=reqType)
+
+        # & Parsing the response so as to start the generation process
+        self.parseResponseForType(res, name=f"{name}")
+        # & Completing the types for the pending nested type interfaces that are left during generation of parent types
         for pendingNestObj in self.nestedTypes:
             self.interfaceExists = False
-            self.parseResponseForTypes(
+            self.parseResponseForType(
                 pendingNestObj["data"], name=f"{pendingNestObj['name']}",
             )
 
-        print(f"[MAIN]: \n{'='*40}\n{self.types}\n{'='*40}")
+        # print(f"[MAIN]: \n{'='*40}\n{self.types}\n{'='*40}")
 
 
-# Exported class
+# ? Exported class
 class Tools(Analyse):
-    pass
+    def __init__(self):
+        super().__init__()

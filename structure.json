@@ -10,16 +10,22 @@
         {
             "url": "todos/:id[str]",
             "params": [
-                1
+                1,""
             ]
         }
     ],
-    "post": [
+    "put": [
         {
-            "url": "todos/:id[str]",
+            "url": "todos/:id[int]",
             "params": [
                 2
-            ]
+            ],
+            "exampleData": {
+                "name": "Richa",
+                "salary": 12134992,
+                "age": 17
+            },
+            "sameResponse": false
         }
     ]
 }

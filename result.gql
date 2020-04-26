@@ -1,22 +1,18 @@
-# Generated with <3
+#? Generated with <3
 
-input TodosInp {
-  id: String!
+input updateTodosInp {
+  id: Number!
 }
 
 
-type Todos {
-  userId: Number!
+type updateTodos {
   id: Number!
-  title: String!
-  completed: Boolean!
 }
 
 type MutationResolver {
-  mutateTodos(args: TodosInp): Todos!
+  updateTodos(args: updateTodosInp): updateTodos!
 }
 
 schema {
-  query: QueryResolver
   mutation: MutationResolver
 }

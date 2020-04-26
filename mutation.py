@@ -1,18 +1,11 @@
-from . import config, tools
+import config
 
 
-class Mutation(tools.Tools):
-    def __init__(self):
-        self.types = config.types
-        self.inputs = config.inputs
+class Mutation:
+    def __init__(self, tools):
+        self.tools = tools
         self.endPoints = []
         self.combineMethods()
-        config.tab = " " * config.structure["config"]["tab"]
-        config.queryFile = config.structure["config"]["file"]
-        config.strict = config.structure["config"]["strict"]
-        config.splitter = config.structure["splitter"]
-        config.apiBase = config.structure["base"]
-        super().__init__()
 
     def combineMethods(self):
         """
@@ -32,11 +25,19 @@ class Mutation(tools.Tools):
         """
         for endPoint in self.endPoints:
             self.interfaceExists = False
-            params = tuple(
+            urlWords = tuple(
                 filter(lambda x: x != "", endPoint["url"].split(config.splitter))
             )
-            self.analyseEndPoint(params, endPoint["params"])
+            try:
+                endPointNameByUser = endPoint["name"]
+            except:
+                endPointNameByUser = ""
 
-        self.parseSchema(prefix="mutate")
-
-        self.writeQueryToFile()
+            self.tools.analyseEndPoint(
+                urlWords,
+                endPoint["params"],
+                name=endPointNameByUser,
+                sameResponse=endPoint["sameResponse"],
+                resData=endPoint["exampleData"],
+                reqType="put",
+            )

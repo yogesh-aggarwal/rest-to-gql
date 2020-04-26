@@ -1,5 +1,5 @@
 import json
-from . import config, mutation, query
+import config, mutation, query, tools
 
 
 # & Loading the REST API configurations
@@ -8,10 +8,31 @@ def loadStructure(name="./structure.json"):
         config.structure = json.loads(f.read())
 
 
-# Load the API configuration file
+
+# ? Load the API configuration file
 loadStructure()
-# Starting the process
+config.tab = " " * config.structure["config"]["tab"]
+config.queryFile = config.structure["config"]["file"]
+config.strict = config.structure["config"]["strict"]
+config.splitter = config.structure["splitter"]
+config.apiBase = config.structure["base"]
+# ? Starting the process
 # get = query.Query()
 # get.init()
-mut = mutation.Mutation()
+
+# # ? Till now everything prepared & now to be written in file
+
+tools = tools.Tools()
+
+get = query.Query(tools)
+mut = mutation.Mutation(tools)
+
+# get.init()
 mut.init()
+
+tools.parseSchema()
+print()
+print()
+print()
+print(tools.schema)
+tools.writeQueryToFile()
