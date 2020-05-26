@@ -15,7 +15,7 @@ Well, this project will take information about your rest API (mostly about listi
 server along with database connectivity of your choise. Here's a overview of technologies supported:
 
 * **Database**: `MongoDB`, `PostgresSQL`, & `MySQL`
-* **Server**: `Apollo Server`
+* **Server**: `Apollo Server`, & `Flask`
 * **Languanges**: `TS` & `JS` (preferably `TS`)
 
 ## How to use it?
