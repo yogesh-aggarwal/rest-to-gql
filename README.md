@@ -16,7 +16,7 @@ server along with database connectivity of your choise. Here's a overview of tec
 
 * **Database**: `MongoDB`, `PostgresSQL`, & `MySQL`
 * **Server**: `Apollo Server`, & `Flask`
-* **Languanges**: `TS` & `JS` (preferably `TS`)
+* **Languanges**: `TS`, & `JS` (preferably `TS`)
 
 ## How to use it?
 * Install the dependencies:
